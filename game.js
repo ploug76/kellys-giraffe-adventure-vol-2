@@ -635,7 +635,7 @@ function rigLimb(x,y,a,len,w,fill,line){const ex=x+Math.sin(a)*len,ey=y+Math.cos
  c.strokeStyle=fill;c.lineWidth=w;c.beginPath();c.moveTo(x,y);c.lineTo(ex,ey);c.stroke();return[ex,ey]}
 function rigStep(p,dt,running,spd){if(p._rph===undefined){p._rph=0;p._ramt=0}
  p._ramt+=((running?1:0)-p._ramt)*Math.min(1,dt*14);
- const v=Math.abs(p.vx);if(running)p._rph=(p._rph+v*dt/(p.mode==='ride'?118:78))%1;
+ const v=Math.abs(p.vx);if(running)p._rph=(p._rph+Math.min(1.375,v/(p.mode==='ride'?118:78))*dt)%1;/* cadence (arm check, Oct 30 2026): capped at ~2.75 steps/s (Jinxy gallop was ~5) */
  else if(p._ramt>0.02){/* settle the nearer leg pair toward a neutral passing pose */const t=p._rph%0.5;p._rph+=(t<0.25?-t:0.5-t)*Math.min(1,dt*10)}
  return p._ramt*clamp(v/spd,0.55,1)+0.0}
 /* Kelly on foot. ix/iy in sprite pixels; bottom-centre of the sprite = ground */
@@ -696,7 +696,7 @@ function bugLeg(hx,hy,fx,t,amp,back){const s=Math.sin(t),lift=Math.max(0,Math.co
  c.beginPath();c.moveTo(hx,hy);c.lineTo(kx,ky);c.lineTo(px,py);c.stroke()}
 function drawBeetleRig(e,x,y,sc,flip,wob){const im=IMG.beetle_body;if(!im)return false;
  const rdt=clamp(e.t-(e._lt===undefined?e.t:e._lt),0,0.1);e._lt=e.t;if(e._rph===undefined){e._rph=(e.x*0.017)%1;e._ramt=1}
- const v=Math.abs(e.vx||0),mv=v>3;e._ramt+=((mv?1:0)-e._ramt)*Math.min(1,rdt*12);if(mv)e._rph=(e._rph+v*rdt/22)%1;
+ const v=Math.abs(e.vx||0),mv=v>3;e._ramt+=((mv?1:0)-e._ramt)*Math.min(1,rdt*12);if(mv)e._rph=(e._rph+Math.min(1.5,v/22)*rdt)%1;/* cadence: beetle tripod capped at 3 steps/s (was ~4.4) */
  const amp=e._ramt*clamp(v/48,0.5,1.2),t=e._rph*TAU,bob=amp*0.8*Math.abs(Math.sin(t)),f=0.5*sc;
  c.save();c.translate(x,y);c.rotate(wob||0);c.scale(flip?-f:f,f);c.translate(-im.width/2,-im.height);
  bugLeg(22,40-bob,14,t+Math.PI,amp,true);bugLeg(32,41-bob,30,t,amp,true);bugLeg(42,40-bob,48,t+Math.PI,amp,true);
