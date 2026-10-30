@@ -534,8 +534,8 @@ function drawTiles(){const Wd=WORLDS[LEVELS[G.li].w],T=G.L.T,x0=Math.max(0,Math.
    c.fillStyle='rgba(230,250,255,.8)';for(let i=0;i<4;i++){const wx=X+i*10+Math.sin(G.t*3+tx+i)*2;c.fillRect(wx,Y+3+Math.sin(G.t*4+i+tx)*2,6,2)}}}}}
 function drawEnt(e){const fl=e.face>0;if(e.dead&&!e.dying)return;c.save();if(e.dying){c.translate(e.x,e.y-e.h/2);c.rotate(e.rot||0);c.translate(-e.x,-(e.y-e.h/2));c.globalAlpha=clamp(e.dying,0,1)}
  if(e.k==='food'){const n=e.f==='mango'?'mango':'leaves';spr(n,e.x,e.y+18+Math.sin(e.t*2)*3,1);if(G.p.mode==='ride'&&Math.hypot(e.x-G.p.x,e.y-G.p.y)<200){c.globalAlpha=0.5+0.5*Math.sin(G.t*6);c.strokeStyle='#fff6a0';c.lineWidth=2;c.beginPath();c.arc(e.x,e.y,24,0,TAU);c.stroke()}}
- else if(e.k==='hyena'){spr(e.dying||e.stun>0?'hy_dizzy':(Math.floor(e.t*6)%2?'hy_walk1':'hy_walk2'),e.x,e.y+3,0.98,fl)}
- else if(e.k==='beetle')spr(Math.floor(e.t*8)%2?'beetle1':'beetle2',e.x,e.y+2,1,fl,1,e.dying?0:Math.sin(e.t*16)*0.03);
+ else if(e.k==='hyena'){if(e.dying||e.stun>0||!drawHyenaRig(e,e.x,e.y+3,0.98,fl))spr(e.dying||e.stun>0?'hy_dizzy':'hy_walk1',e.x,e.y+3,0.98,fl)}
+ else if(e.k==='beetle'){if(e.dying||e.stun>0||!drawBeetleRig(e,e.x,e.y+2,1,fl,Math.sin(e.t*16)*0.02))spr('beetle1',e.x,e.y+2,1,fl,1,e.dying?0:Math.sin(e.t*16)*0.03)}
  else if(e.k==='bee')spr(Math.floor(e.t*14)%2?'bee1':'bee2',e.x,e.y+4,1,fl);
  else if(e.k==='porc')spr('porc',e.x,e.y+2,1,fl,1,Math.sin(e.t*8)*0.03);
  else if(e.k==='vult')spr(e.st==='dive'||Math.floor(e.t*5)%2?'vult2':'vult1',e.x,e.y+10,1,fl);
@@ -551,7 +551,9 @@ function drawPlayer(p){if(p.inv>0&&Math.floor(p.inv*14)%2&&!p.dead)return;let n,
  if(p.swing){const hp=headPt(p),h=p.swing.h;c.strokeStyle='#5a3a1a';c.lineWidth=3;c.beginPath();c.moveTo(h.x,h.y+20);c.lineTo(hp.x,hp.y);c.stroke()}
  if(p.tng>0&&p.tngT){const hp=headPt(p),o=p.tngT.o,k=1-Math.abs(p.tng-0.15)/0.15,tx=lerp(hp.x,o.x,k),ty=lerp(hp.y+14,o.y,k);c.strokeStyle='#e8507a';c.lineWidth=6;c.lineCap='round';c.beginPath();c.moveTo(hp.x+p.face*6,hp.y+16);c.lineTo(tx,ty);c.stroke();c.fillStyle='#ff7aa0';c.beginPath();c.arc(tx,ty,6,0,TAU);c.fill()}
  const sq=p.squash>0?1+p.squash*0.12:1;c.save();c.translate(p.x,p.y);c.scale(1/sq*(1),sq>1?1/sq*0.98+0.02:1);c.translate(-p.x,-p.y);
- const anchorY=p.swing?0.5:1,yy=p.swing?p.y-p.h*0.5:p.y+2;spr(n,p.x,yy,ride?1:0.98,p.face<0,1,rot,anchorY);c.restore();
+ const anchorY=p.swing?0.5:1,yy=p.swing?p.y-p.h*0.5:p.y+2;
+ const rdt=clamp(p.anim-(p._la===undefined?p.anim:p._la),0,0.1);p._la=p.anim;const isRun=/_run[12]$/.test(n),amp=rigStep(p,rdt,isRun,PH[p.mode].spd),useRig=!p.dead&&(isRun||(/_idle$/.test(n)&&p.onG&&p._ramt>0.15));
+ if(!(useRig&&(ride?drawRideRig(p,p.x,yy,1,p.face<0,amp):drawKellyRig(p,p.x,yy,0.98,p.face<0,amp))))spr(n,p.x,yy,ride?1:0.98,p.face<0,1,rot,anchorY);c.restore();
  if(p.ram>0){c.globalAlpha=0.5;spr(n,p.x-p.face*22,p.y+2,1,p.face<0,0.4,rot);c.globalAlpha=1}
  if(G.p.mode==='ride'&&!p.swing){const hk=nearHook(p);if(hk){c.strokeStyle='rgba(255,240,140,'+(0.5+0.5*Math.sin(G.t*10))+')';c.lineWidth=3;c.beginPath();c.arc(hk.x,hk.y+38,22,0,TAU);c.stroke()}}}
 function drawBoss(b){if(!b)return;const k=b.k;let n;const st=b.st;
@@ -626,6 +628,81 @@ function render(){c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,W,H);if(!G){c.
  ambient(G.dtR||0.016);if(G.flash&&G.flash.a>0){c.globalAlpha=G.flash.a;c.fillStyle=G.flash.c;c.fillRect(0,0,W,gameH);c.globalAlpha=1}
  const vg=c.createRadialGradient(W/2,gameH/2,Math.min(W,gameH)*0.45,W/2,gameH/2,Math.max(W,gameH)*0.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.35)');c.fillStyle=vg;c.fillRect(0,0,W,gameH);
  c.restore();drawPadBG();if(state==='play'||state==='pause')drawHUD()}
+
+/* ===== run-cycle rig: real alternating strides (body art + animated legs) ===== */
+function rigLimb(x,y,a,len,w,fill,line){const ex=x+Math.sin(a)*len,ey=y+Math.cos(a)*len;c.lineCap='round';
+ c.strokeStyle=line;c.lineWidth=w+3.2;c.beginPath();c.moveTo(x,y);c.lineTo(ex,ey);c.stroke();
+ c.strokeStyle=fill;c.lineWidth=w;c.beginPath();c.moveTo(x,y);c.lineTo(ex,ey);c.stroke();return[ex,ey]}
+function rigStep(p,dt,running,spd){if(p._rph===undefined){p._rph=0;p._ramt=0}
+ p._ramt+=((running?1:0)-p._ramt)*Math.min(1,dt*14);
+ const v=Math.abs(p.vx);if(running)p._rph=(p._rph+v*dt/(p.mode==='ride'?118:78))%1;
+ else if(p._ramt>0.02){/* settle the nearer leg pair toward a neutral passing pose */const t=p._rph%0.5;p._rph+=(t<0.25?-t:0.5-t)*Math.min(1,dt*10)}
+ return p._ramt*clamp(v/spd,0.55,1)+0.0}
+/* Kelly on foot. ix/iy in sprite pixels; bottom-centre of the sprite = ground */
+function kellyLeg(hx,hy,t,amp,back){const th=0.1+amp*0.74*Math.sin(t),cs=Math.cos(t),kn=0.14+amp*(1.6*Math.pow(Math.max(0,cs),1.3)+0.16*Math.max(0,-cs));
+ const J=back?'#1b3048':'#2a4a70',JL=back?'#0a1420':'#0e1a28',B=back?'#6a3a14':'#8e5222',BL=back?'#2a1404':'#3a1a06';
+ const k=rigLimb(hx,hy,th,32,back?19:21,J,JL);
+ if(!back){c.strokeStyle='rgba(120,160,210,.35)';c.lineWidth=3;c.beginPath();c.moveTo(hx+Math.cos(th)*5,hy-Math.sin(th)*5);c.lineTo(k[0]+Math.cos(th)*4,k[1]-Math.sin(th)*4);c.stroke()}
+ const sa=th-kn,a=rigLimb(k[0],k[1],sa,24,back?14:15,J,JL);
+ /* boot: shaft continues the shin, foot points forward */
+ const b=rigLimb(a[0],a[1],sa,8,back?17:18,B,BL),fa=sa+Math.PI/2-0.15-amp*0.35*Math.max(0,cs);
+ c.save();c.translate(b[0],b[1]);c.rotate(-fa+Math.PI/2);c.fillStyle=BL;c.beginPath();c.ellipse(5,1,13.5,7.8,0,0,TAU);c.fill();c.fillStyle=B;c.beginPath();c.ellipse(5,0,11.8,6.2,0,0,TAU);c.fill();
+ c.fillStyle=BL;c.fillRect(-7,4.6,24,3);if(!back){c.fillStyle='rgba(255,210,150,.45)';c.fillRect(-2,-4,8,2)}c.restore()}
+function drawKellyRig(p,x,y,sc,flip,amp){const im=IMG.kelly_torso;if(!im)return false;const f=0.5*sc,t=p._rph*TAU,
+ bob=amp*5*Math.cos(2*t),lean=amp*0.035*Math.sin(2*t);
+ c.save();c.translate(x,y);c.scale(flip?-f:f,f);const hx=3,hy=-66+bob;
+ kellyLeg(hx-3,hy,t+Math.PI,amp,true);
+ c.save();c.translate(hx,hy);c.rotate(lean);c.translate(-hx,-hy);c.drawImage(im,-59,-161+bob);c.restore();
+ kellyLeg(hx+2,hy,t,amp,false);c.restore();return true}
+/* Jinxy (ride mode): four-legged gallop under the body art */
+function girLeg(hx,hy,t,amp,front,back){const cs=Math.cos(t),s=Math.sin(t),up=front?0.12+amp*0.7*s:-0.08+amp*0.64*s,
+ bend=0.1+amp*1.25*Math.pow(Math.max(0,cs),1.3),lo=front?up-bend:up+bend*0.95;
+ const T=back?'#c98a34':'#f2b24e',L=back?'#5a3410':'#8a5418',P=back?'#8a4e14':'#b8661c';
+ const k=rigLimb(hx,hy,up,30,back?15:16.5,T,L);
+ c.fillStyle=P;for(const q of [0.3,0.62]){c.beginPath();c.ellipse(hx+(k[0]-hx)*q+1.5,hy+(k[1]-hy)*q,4.4,3.2,-up,0,TAU);c.fill()}
+ const a=rigLimb(k[0],k[1],lo,28,back?10:11,T,L);c.fillStyle=T;c.beginPath();c.arc(k[0],k[1],back?7:8,0,TAU);c.fill();
+ c.save();c.translate(a[0],a[1]);c.rotate(-lo);c.fillStyle=back?'#2e1806':'#4a2608';c.beginPath();c.moveTo(-6.5,-2);c.lineTo(6.5,-2);c.lineTo(8,8);c.quadraticCurveTo(0,10,-8,8);c.closePath();c.fill();c.fillStyle='rgba(255,220,170,.25)';c.fillRect(-4,0,6,2);c.restore()}
+function girLegS(hx,hy,t,amp,front,back,k){c.save();c.translate(hx,hy);c.scale(k,k);girLeg(0,0,t,amp,front,back);c.restore()}
+function drawRideRig(p,x,y,sc,flip,amp){const im=IMG.ride_body;if(!im)return false;const f=0.5*sc,t=p._rph*TAU,
+ bob=amp*4.5*Math.cos(t+0.4),pitch=amp*0.05*Math.sin(t+0.4),K=0.85;
+ c.save();c.translate(x,y);c.scale(flip?-f:f,f);c.translate(0,bob);c.rotate(pitch);
+ const HX=-28,FX=26,HY=-59,FY=-59;
+ girLegS(HX+4,HY,t,amp,false,true,K);girLegS(FX+4,FY,t+Math.PI*0.9,amp,true,true,K);
+ c.drawImage(im,-im.width/2,-im.height);
+ girLegS(HX,HY+2,t+Math.PI*0.2,amp,false,false,K);girLegS(FX,FY+2,t+Math.PI*1.1,amp,true,false,K);
+ c.restore();return true}
+/* Hyena: 4-leg walk (lateral sequence) under the legless body art; sprite faces left natively. Render-only. */
+function hyLeg(hx,hy,t,amp,front,back){const s=Math.sin(t),cs=Math.cos(t),lift=Math.pow(Math.max(0,cs),1.4);
+ const T=back?'#8f7148':'#c29d68',L=back?'#24180c':'#3b2a1c';
+ const up=(front?0.04:-0.06)+amp*0.42*s,u=front?up:up+0.32,lo=front?up-0.05-amp*1.15*lift:up-0.3-amp*0.95*lift;
+ const k=rigLimb(hx,hy,-u,front?19:18,front?(back?10:12):(back?12:14.5),T,L);
+ const a=rigLimb(k[0],k[1],-lo,front?17:18,back?8:9.5,T,L);
+ c.fillStyle=T;c.beginPath();c.arc(k[0],k[1],back?4.8:5.6,0,TAU);c.fill();
+ if(!back){c.fillStyle='rgba(60,40,24,.75)';c.beginPath();c.ellipse((hx+k[0])/2,(hy+k[1])/2,2.6,3.4,0,0,TAU);c.fill()}
+ c.fillStyle=back?'#3a2a1a':'#5a4430';c.beginPath();c.ellipse(a[0]-3,a[1]+1.5,6.5,3.6,0,0,TAU);c.fill()}
+function drawHyenaRig(e,x,y,sc,flip){const im=IMG.hy_body;if(!im)return false;
+ const rdt=clamp(e.t-(e._lt===undefined?e.t:e._lt),0,0.1);e._lt=e.t;if(e._rph===undefined){e._rph=(e.x*0.013)%1;e._ramt=1}
+ const v=Math.abs(e.vx||0),mv=v>5;e._ramt+=((mv?1:0)-e._ramt)*Math.min(1,rdt*10);if(mv)e._rph=(e._rph+v*rdt/62)%1;
+ const amp=e._ramt*clamp(v/75,0.5,1.2),t=e._rph*TAU,bob=amp*1.6*Math.cos(2*t),f=0.5*sc;
+ c.save();c.translate(x,y);c.scale(flip?-f:f,f);c.translate(-im.width/2,-im.height);
+ hyLeg(106,66+bob,t+Math.PI,amp,false,true);hyLeg(48,66+bob,t+Math.PI*1.5,amp,true,true);
+ c.drawImage(im,0,bob);
+ hyLeg(118,68+bob,t,amp,false,false);hyLeg(60,68+bob,t+Math.PI*0.5,amp,true,false);
+ c.restore();return true}
+/* Beetle: 6-leg tripod scuttle under the legless shell art; sprite faces left natively. Render-only. */
+function bugLeg(hx,hy,fx,t,amp,back){const s=Math.sin(t),lift=Math.max(0,Math.cos(t));
+ const px=fx+amp*5.5*s,py=52-amp*4.5*lift,kx=(hx+px)/2+(px<hx?-2:2),ky=Math.min(hy,py)-5;
+ c.strokeStyle=back?'#1a1024':'#2c1c3c';c.lineWidth=back?2.6:3.2;c.lineCap='round';c.lineJoin='round';
+ c.beginPath();c.moveTo(hx,hy);c.lineTo(kx,ky);c.lineTo(px,py);c.stroke()}
+function drawBeetleRig(e,x,y,sc,flip,wob){const im=IMG.beetle_body;if(!im)return false;
+ const rdt=clamp(e.t-(e._lt===undefined?e.t:e._lt),0,0.1);e._lt=e.t;if(e._rph===undefined){e._rph=(e.x*0.017)%1;e._ramt=1}
+ const v=Math.abs(e.vx||0),mv=v>3;e._ramt+=((mv?1:0)-e._ramt)*Math.min(1,rdt*12);if(mv)e._rph=(e._rph+v*rdt/22)%1;
+ const amp=e._ramt*clamp(v/48,0.5,1.2),t=e._rph*TAU,bob=amp*0.8*Math.abs(Math.sin(t)),f=0.5*sc;
+ c.save();c.translate(x,y);c.rotate(wob||0);c.scale(flip?-f:f,f);c.translate(-im.width/2,-im.height);
+ bugLeg(22,40-bob,14,t+Math.PI,amp,true);bugLeg(32,41-bob,30,t,amp,true);bugLeg(42,40-bob,48,t+Math.PI,amp,true);
+ c.drawImage(im,0,-bob);
+ bugLeg(18,42-bob,8,t,amp,false);bugLeg(30,43-bob,26,t+Math.PI,amp,false);bugLeg(42,42-bob,52,t,amp,false);
+ c.restore();return true}
 
 /* ===== menus (DOM) ===== */
 const ui=$('ui');
