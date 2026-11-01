@@ -1,6 +1,6 @@
 # Kelly's Giraffe Adventure Vol. 2: The Rhino Rumble
 
-Kelly's giraffe is back! Run, ram, neck-grab, swing and slurp across 10 painted savanna levels and 5 boss battles to save Peter and the birthday cake from King Rumble the Rhino. A free game from Peter's Arcade.
+Kelly's giraffe is back! Run, ram, neck-grab, swing and slurp across 10 painted savanna levels and 5 boss battles to save Peter and the birthday cake from King Rumble the Rhino.
 
 Play: https://ploug76.github.io/kellys-giraffe-adventure-vol-2/
 

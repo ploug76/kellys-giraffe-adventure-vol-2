@@ -48,3 +48,5 @@ body.uiopen #pad,body.uiopen #hud{visibility:hidden}
 /* Oct 30: title menu never covers the characters (portrait: whole art band on top, menu below; landscape: art on the right, menu on the left) */
 @media (orientation:portrait){body:has(#ui>.scr.title) #bgart{background-size:auto 40vh;background-position:55% 0}#ui:has(>.scr.title){align-items:center;padding-top:40vh}#ui>.scr.title{max-height:calc(100dvh - 40vh - 6px);padding:4px 12px calc(10px + env(safe-area-inset-bottom))}}
 @media (orientation:landscape){body:has(#ui>.scr.title) #bgart{background-size:auto 100%;background-position:right center}#ui:has(>.scr.title){justify-content:flex-start}#ui>.scr.title{max-width:min(37vw,350px);margin-left:calc(6px + env(safe-area-inset-left));padding:8px 6px}#ui>.scr.title .logo .l2{font-size:clamp(28px,5.4vw,42px)}#ui>.scr.title .tbtns{flex-direction:column;flex-wrap:nowrap}}
+
+.btn.skip{position:sticky;top:0;float:right;z-index:2;margin:0 0 6px 6px;padding:6px 14px;min-height:40px;font-size:16px;background:linear-gradient(180deg,#6a5a4a,#3a2a1a);box-shadow:0 3px 0 #1a0e04}
